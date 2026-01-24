@@ -18,9 +18,9 @@ next-devtools-mcp/
 
 # Platform package build artifacts (only package.json should be committed)
 packages/*/bin/
+packages/*/src/*.html
 packages/*/mcp-server/
 packages/*/skills/
-packages/*/src/
 
 mcp-server/next-env.d.ts
 

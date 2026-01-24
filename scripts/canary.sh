@@ -19,20 +19,22 @@ echo "📁 Copying binaries to platform packages..."
 # darwin-arm64
 DARWIN_ARM64_PKG_DIR="$ROOT_DIR/packages/d3k-darwin-arm64"
 DARWIN_ARM64_DIST_DIR="$ROOT_DIR/dist-bin/d3k-darwin-arm64"
-rm -rf "$DARWIN_ARM64_PKG_DIR/bin" "$DARWIN_ARM64_PKG_DIR/mcp-server" "$DARWIN_ARM64_PKG_DIR/skills" "$DARWIN_ARM64_PKG_DIR/src"
+rm -rf "$DARWIN_ARM64_PKG_DIR/bin" "$DARWIN_ARM64_PKG_DIR/mcp-server" "$DARWIN_ARM64_PKG_DIR/skills" "$DARWIN_ARM64_PKG_DIR/src" "$DARWIN_ARM64_PKG_DIR/packages"
 cp -r "$DARWIN_ARM64_DIST_DIR/bin" "$DARWIN_ARM64_PKG_DIR/"
 cp -r "$DARWIN_ARM64_DIST_DIR/mcp-server" "$DARWIN_ARM64_PKG_DIR/"
 cp -r "$DARWIN_ARM64_DIST_DIR/skills" "$DARWIN_ARM64_PKG_DIR/"
 cp -r "$DARWIN_ARM64_DIST_DIR/src" "$DARWIN_ARM64_PKG_DIR/"
+cp -r "$DARWIN_ARM64_DIST_DIR/packages" "$DARWIN_ARM64_PKG_DIR/" 2>/dev/null || true
 
 # linux-x64
 LINUX_X64_PKG_DIR="$ROOT_DIR/packages/d3k-linux-x64"
 LINUX_X64_DIST_DIR="$ROOT_DIR/dist-bin/d3k-linux-x64"
-rm -rf "$LINUX_X64_PKG_DIR/bin" "$LINUX_X64_PKG_DIR/mcp-server" "$LINUX_X64_PKG_DIR/skills" "$LINUX_X64_PKG_DIR/src"
+rm -rf "$LINUX_X64_PKG_DIR/bin" "$LINUX_X64_PKG_DIR/mcp-server" "$LINUX_X64_PKG_DIR/skills" "$LINUX_X64_PKG_DIR/src" "$LINUX_X64_PKG_DIR/packages"
 cp -r "$LINUX_X64_DIST_DIR/bin" "$LINUX_X64_PKG_DIR/"
 cp -r "$LINUX_X64_DIST_DIR/mcp-server" "$LINUX_X64_PKG_DIR/"
 cp -r "$LINUX_X64_DIST_DIR/skills" "$LINUX_X64_PKG_DIR/"
 cp -r "$LINUX_X64_DIST_DIR/src" "$LINUX_X64_PKG_DIR/"
+cp -r "$LINUX_X64_DIST_DIR/packages" "$LINUX_X64_PKG_DIR/" 2>/dev/null || true
 
 # For local testing, use the darwin-arm64 package
 PLATFORM_PKG_DIR="$DARWIN_ARM64_PKG_DIR"

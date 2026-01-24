@@ -17,6 +17,7 @@
   "files": [
     "bin/",
     "mcp-server/",
+    "packages/",
     "skills/",
     "src/"
   ],

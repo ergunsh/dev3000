@@ -25,6 +25,7 @@ import { type LogEntry, NextJsErrorDetector, OutputProcessor, StandardLogParser 
 import { DevTUI } from "./tui-interface.js"
 import { formatMcpConfigTargets, MCP_CONFIG_TARGETS, type McpConfigTarget } from "./utils/mcp-configs.js"
 import { getProjectDir, getProjectDisplayName, getProjectName } from "./utils/project-name.js"
+import { detectsReact } from "./utils/skill-installer.js"
 import { formatTimestamp } from "./utils/timestamp.js"
 import {
   checkForUpdates,
@@ -190,6 +191,7 @@ interface DevEnvironmentOptions {
   debugPort?: number // Chrome debugging port (default 9222, auto-incremented for multiple instances)
   headless?: boolean // Run Chrome in headless mode (for serverless/CI environments)
   withAgent?: string // Command to run an embedded agent (e.g. "claude --dangerously-skip-permissions")
+  isReactProject?: boolean // Whether the project uses React (auto-detected if not provided)
 }
 
 class Logger {
@@ -2596,6 +2598,13 @@ export class DevEnvironment {
       mkdirSync(this.options.profileDir, { recursive: true })
     }
 
+    // Auto-detect React project if not explicitly provided
+    const isReactProject = this.options.isReactProject ?? detectsReact()
+    if (isReactProject) {
+      this.debugLog("React project detected - React DevTools will be injected")
+      this.logger.log("browser", "[CDP] React project detected - DevTools will be available")
+    }
+
     // Initialize CDP monitor with enhanced logging - use MCP public directory for screenshots
     this.cdpMonitor = new CDPMonitor(
       this.options.profileDir,
@@ -2609,7 +2618,8 @@ export class DevEnvironment {
       this.options.port, // App server port to monitor
       this.options.mcpPort, // MCP server port to ignore
       this.options.debugPort, // Chrome debug port
-      this.options.headless // Headless mode for serverless/CI environments
+      this.options.headless, // Headless mode for serverless/CI environments
+      isReactProject // Whether to inject React DevTools scripts
     )
 
     try {

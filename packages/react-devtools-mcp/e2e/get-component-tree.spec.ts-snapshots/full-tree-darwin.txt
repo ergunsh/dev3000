@@ -1,0 +1,40 @@
+=== Legend ===
+{key: value}              → props (inputs to component)
+state(value, ...)         → useState values (in hook order)
+memo(value)               → useMemo computed value
+ref(value)                → useRef current value
+context(value)            → useContext value
+[Memo] [ForwardRef]       → component type badges
+
+Use inspect(id) for full component details.
+
+=== Component Tree ===
+
+Initial Paint (#ID)
+└─ App (#ID)
+   └─ Context.Provider (#ID) [Context]
+      ├─ Counter (#ID)
+      ├─ Counter (#ID)
+      ├─ Timer (#ID)
+      ├─ ThemeDisplay (#ID)
+      ├─ Memo(MemoizedDisplay2) (#ID) [Memo]
+      ├─ ForwardRef(ForwardRefInput2) (#ID) [ForwardRef]
+      ├─ NestedLevel (#ID)
+      │  └─ NestedLevel (#ID)
+      │     └─ NestedLevel (#ID)
+      │        └─ NestedLevel (#ID)
+      │           └─ NestedLevel (#ID)
+      ├─ ItemList (#ID)
+      ├─ ComplexPropsComponent (#ID)
+      ├─ CustomHookComponent (#ID)
+      ├─ MultipleHooksComponent (#ID)
+      ├─ FragmentWrapper (#ID)
+      │  ├─ SearchableAlpha (#ID)
+      │  ├─ SearchableBeta (#ID)
+      │  └─ SearchableGamma (#ID)
+      ├─ CounterDisplay (#ID)
+      ├─ counterHelper (#ID)
+      └─ StyledSection (#ID)
+         ├─ ButtonWrapper (#ID)
+         ├─ ExternalComponent (#ID)
+         └─ AnotherExternalComponent (#ID)

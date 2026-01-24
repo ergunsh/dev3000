@@ -1,0 +1,22 @@
+Counter (#ID)
+
+props:
+  label: "Counter A"
+  initialCount: 5
+
+hooks:
+  1. State(count): 5
+  2. Ref(renderCountRef): 2
+  3. Callback(increment): "[function: () => {}]"
+  4. Callback(decrement): "[function: () => {}]"
+  5. Memo(doubled): 10
+  6. Effect: "[function: () => {}]"
+
+rendered by:
+  App (#ID)
+
+source:
+  App.tsx
+
+dom:
+  selector: [normalized]

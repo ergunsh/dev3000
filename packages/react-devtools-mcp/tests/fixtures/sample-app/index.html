@@ -1,0 +1,304 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React DevTools MCP Test App</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 8px;
+      border: 1px solid #ddd;
+      margin: 4px 0;
+      border-radius: 4px;
+    }
+    li.selected {
+      background: #e3f2fd;
+    }
+    .error-box {
+      color: red;
+      border: 1px solid red;
+      padding: 10px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="./react-devtools-mcp-full.iife.js"></script>
+  <!-- React 18 from CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel for JSX transformation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- App components -->
+  <script type="text/babel" data-type="module">
+    const { useState, useEffect, useCallback, useMemo, useRef, Component } = React;
+
+    // Functional component with hooks
+    function Header({ title, subtitle }) {
+      const titleRef = useRef(null);
+
+      useEffect(() => {
+        document.title = title;
+      }, [title]);
+
+      return (
+        <header>
+          <h1 ref={titleRef}>{title}</h1>
+          {subtitle && <p>{subtitle}</p>}
+        </header>
+      );
+    }
+
+    // Functional component with useState and useCallback
+    function Counter({ initialCount = 0, onCountChange }) {
+      const [count, setCount] = useState(initialCount);
+
+      const increment = useCallback(() => {
+        setCount(c => {
+          const newCount = c + 1;
+          onCountChange?.(newCount);
+          return newCount;
+        });
+      }, [onCountChange]);
+
+      const decrement = useCallback(() => {
+        setCount(c => {
+          const newCount = c - 1;
+          onCountChange?.(newCount);
+          return newCount;
+        });
+      }, [onCountChange]);
+
+      useEffect(() => {
+        console.log('Counter mounted with initial count:', initialCount);
+        return () => console.log('Counter unmounting');
+      }, []);
+
+      return (
+        <div className="counter">
+          <button onClick={decrement} data-testid="decrement">-</button>
+          <span data-testid="count">{count}</span>
+          <button onClick={increment} data-testid="increment">+</button>
+        </div>
+      );
+    }
+
+    // Class component with state
+    class ItemList extends Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          selectedIndex: null,
+          filter: ''
+        };
+      }
+
+      handleSelect = (index) => {
+        this.setState({ selectedIndex: index });
+        this.props.onItemSelect?.(this.props.items[index]);
+      };
+
+      handleFilterChange = (e) => {
+        this.setState({ filter: e.target.value });
+      };
+
+      render() {
+        const { items } = this.props;
+        const { selectedIndex, filter } = this.state;
+
+        const filteredItems = items.filter(item =>
+          item.toLowerCase().includes(filter.toLowerCase())
+        );
+
+        return (
+          <div className="item-list">
+            <input
+              type="text"
+              placeholder="Filter items..."
+              value={filter}
+              onChange={this.handleFilterChange}
+              data-testid="filter-input"
+            />
+            <ul>
+              {filteredItems.map((item, index) => (
+                <li
+                  key={item}
+                  className={selectedIndex === index ? 'selected' : ''}
+                  onClick={() => this.handleSelect(index)}
+                  data-testid={`item-${index}`}
+                >
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      }
+    }
+
+    // Component with useMemo
+    function ExpensiveList({ items, multiplier }) {
+      const computedItems = useMemo(() => {
+        return items.map((item, i) => ({
+          original: item,
+          computed: `${item}-${i * multiplier}`
+        }));
+      }, [items, multiplier]);
+
+      return (
+        <div className="expensive-list">
+          <h3>Computed Items (multiplier: {multiplier})</h3>
+          <ul>
+            {computedItems.map((item, i) => (
+              <li key={i}>{item.computed}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    // Deeply nested component for testing depth
+    function DeepComponent({ level, maxLevel }) {
+      if (level >= maxLevel) {
+        return <span data-testid={`deep-${level}`}>Leaf at level {level}</span>;
+      }
+      return (
+        <div data-testid={`deep-${level}`}>
+          Level {level}
+          <DeepComponent level={level + 1} maxLevel={maxLevel} />
+        </div>
+      );
+    }
+
+    // Component that may trigger warnings (missing key in development)
+    function WarningComponent({ showWarning }) {
+      if (showWarning) {
+        // This will cause a React warning about updating state during render
+        // in some scenarios - we'll use a different approach
+        return (
+          <div className="error-box">
+            Warning component active
+          </div>
+        );
+      }
+      return null;
+    }
+
+    // Component with context
+    const ThemeContext = React.createContext('light');
+
+    function ThemedButton({ children }) {
+      const theme = React.useContext(ThemeContext);
+      return (
+        <button
+          style={{
+            background: theme === 'dark' ? '#333' : '#fff',
+            color: theme === 'dark' ? '#fff' : '#333'
+          }}
+        >
+          {children}
+        </button>
+      );
+    }
+
+    // Main App component
+    function App() {
+      const [count, setCount] = useState(0);
+      const [theme, setTheme] = useState('light');
+      const [showWarning, setShowWarning] = useState(false);
+      const items = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry'];
+
+      const handleCountChange = useCallback((newCount) => {
+        console.log('Count changed to:', newCount);
+      }, []);
+
+      const handleItemSelect = useCallback((item) => {
+        console.log('Selected item:', item);
+      }, []);
+
+      return (
+        <ThemeContext.Provider value={theme}>
+          <div className="app" data-testid="app">
+            <Header
+              title="Test App"
+              subtitle="React DevTools MCP E2E Tests"
+            />
+
+            <section>
+              <h2>Counter</h2>
+              <Counter
+                initialCount={0}
+                onCountChange={handleCountChange}
+              />
+            </section>
+
+            <section>
+              <h2>Item List</h2>
+              <ItemList
+                items={items}
+                onItemSelect={handleItemSelect}
+              />
+            </section>
+
+            <section>
+              <h2>Expensive Computation</h2>
+              <ExpensiveList
+                items={['foo', 'bar', 'baz']}
+                multiplier={count + 1}
+              />
+            </section>
+
+            <section>
+              <h2>Deep Nesting</h2>
+              <DeepComponent level={0} maxLevel={5} />
+            </section>
+
+            <section>
+              <h2>Theme</h2>
+              <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}>
+                Toggle Theme (current: {theme})
+              </button>
+              <ThemedButton>Themed Button</ThemedButton>
+            </section>
+
+            <section>
+              <h2>Warnings</h2>
+              <button onClick={() => setShowWarning(w => !w)}>
+                Toggle Warning Component
+              </button>
+              <WarningComponent showWarning={showWarning} />
+            </section>
+          </div>
+        </ThemeContext.Provider>
+      );
+    }
+
+    // Render the app
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+
+    // Signal that the app is ready
+    window.__APP_READY__ = true;
+  </script>
+</body>
+</html>

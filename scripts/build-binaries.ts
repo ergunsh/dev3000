@@ -131,6 +131,15 @@ async function compileForTarget(target: (typeof TARGETS)[number]) {
     cpSync(loadingHtml, join(targetDir, "src", "loading.html"))
   }
 
+  // Copy react-devtools-mcp dist (for React DevTools integration)
+  const reactDevToolsDist = join(ROOT_DIR, "packages", "react-devtools-mcp", "dist")
+  if (existsSync(reactDevToolsDist)) {
+    console.log("📁 Copying React DevTools scripts...")
+    const reactDevToolsDest = join(targetDir, "packages", "react-devtools-mcp", "dist")
+    mkdirSync(reactDevToolsDest, { recursive: true })
+    cpSync(reactDevToolsDist, reactDevToolsDest, { recursive: true })
+  }
+
   console.log(`✅ Platform package prepared: ${targetDir}`)
 }
 

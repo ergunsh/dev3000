@@ -1,0 +1,9 @@
+## Component Source
+
+**Selector:** `[data-testid="counter-Counter A"]`
+**Component:** Counter
+**Element ID:** #ID
+**Source:** `http://localhost:5173/src/App.tsx:44:20`
+
+### Owner chain:
+`App -> Counter`

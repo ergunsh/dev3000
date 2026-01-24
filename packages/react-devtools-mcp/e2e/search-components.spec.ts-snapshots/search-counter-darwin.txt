@@ -1,0 +1,8 @@
+Found 4 components matching "Counter":
+
+1. Counter (#ID) at Initial Paint > App > Context.Provider
+2. Counter (#ID) at Initial Paint > App > Context.Provider
+3. CounterDisplay (#ID) at Initial Paint > App > Context.Provider
+4. counterHelper (#ID) at Initial Paint > App > Context.Provider
+
+Use inspect(id) for details.

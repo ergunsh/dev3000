@@ -716,6 +716,116 @@ const handler = createMcpHandler(
       }
     )
 
+    // React DevTools tools - expose React component inspection capabilities
+    // These tools work when d3k detects a React project and injects the react-devtools-mcp scripts
+
+    server.tool(
+      "react_devtools_get_component_tree",
+      "Get the React component tree structure. Returns hierarchical view of all React components " +
+        "with their names, types, and IDs. Use this to understand the component hierarchy " +
+        "and get element IDs for inspect_element.",
+      {
+        depth: z.number().optional().describe("Maximum depth to traverse (default: unlimited)"),
+        includeHostComponents: z
+          .boolean()
+          .optional()
+          .describe("Include DOM elements like div, span in tree (default: false)")
+      },
+      async (params) => {
+        return executeBrowserAction({
+          action: "evaluate",
+          params: {
+            expression: `(async () => {
+              if (!globalThis.__REACT_DEVTOOLS_MCP__?.tools?.react_get_component_tree) {
+                return { error: 'React DevTools not available. Ensure this is a React app and the page has loaded.' };
+              }
+              return await globalThis.__REACT_DEVTOOLS_MCP__.tools.react_get_component_tree.handler(${JSON.stringify(params)});
+            })()`
+          },
+          rawResult: true
+        })
+      }
+    )
+
+    server.tool(
+      "react_devtools_inspect_element",
+      "Get detailed information about a specific React component by ID. Returns props, state, " +
+        "hooks, context, and source location for that component. " +
+        "Get the element ID from get_component_tree first.",
+      {
+        id: z.number().describe("Element ID from get_component_tree"),
+        path: z
+          .array(z.union([z.string(), z.number()]))
+          .optional()
+          .describe("Path to hydrate nested/dehydrated data")
+      },
+      async (params) => {
+        return executeBrowserAction({
+          action: "evaluate",
+          params: {
+            expression: `(async () => {
+              if (!globalThis.__REACT_DEVTOOLS_MCP__?.tools?.react_inspect_element) {
+                return { error: 'React DevTools not available. Ensure this is a React app and the page has loaded.' };
+              }
+              return await globalThis.__REACT_DEVTOOLS_MCP__.tools.react_inspect_element.handler(${JSON.stringify(params)});
+            })()`
+          },
+          rawResult: true
+        })
+      }
+    )
+
+    server.tool(
+      "react_devtools_search_components",
+      "Find React components by name pattern. Returns matching components with their IDs " +
+        "and paths in the component tree. Useful for finding specific components before inspecting.",
+      {
+        query: z.string().describe("Component name pattern to search for"),
+        caseSensitive: z.boolean().optional().describe("Case-sensitive search (default: false)"),
+        limit: z.number().optional().describe("Maximum results to return (default: 50)")
+      },
+      async (params) => {
+        return executeBrowserAction({
+          action: "evaluate",
+          params: {
+            expression: `(async () => {
+              if (!globalThis.__REACT_DEVTOOLS_MCP__?.tools?.react_search_components) {
+                return { error: 'React DevTools not available. Ensure this is a React app and the page has loaded.' };
+              }
+              return await globalThis.__REACT_DEVTOOLS_MCP__.tools.react_search_components.handler(${JSON.stringify(params)});
+            })()`
+          },
+          rawResult: true
+        })
+      }
+    )
+
+    server.tool(
+      "react_devtools_find_component_source",
+      "Find the source file location for a React component that renders a specific DOM element. " +
+        "Takes a CSS selector and returns the component name, source file path, and line number. " +
+        "Uses official React DevTools infrastructure for reliable DOM-to-component mapping.",
+      {
+        selector: z
+          .string()
+          .describe("CSS selector for the DOM element (e.g., 'nav', '.header', '#main', '[data-testid=\"button\"]')")
+      },
+      async (params) => {
+        return executeBrowserAction({
+          action: "evaluate",
+          params: {
+            expression: `(async () => {
+              if (!globalThis.__REACT_DEVTOOLS_MCP__?.tools?.react_find_component_source) {
+                return { error: 'React DevTools not available. Ensure this is a React app and the page has loaded.' };
+              }
+              return await globalThis.__REACT_DEVTOOLS_MCP__.tools.react_find_component_source.handler(${JSON.stringify(params)});
+            })()`
+          },
+          rawResult: true
+        })
+      }
+    )
+
     // Tool that returns monitoring code for Claude to execute
     // TODO: Commenting out for now - need to figure out the right approach for proactive monitoring
     /*

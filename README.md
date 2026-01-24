@@ -94,6 +94,35 @@ dev3000 automatically integrates with:
 
 The MCP server discovers available tools automatically and suggests them when relevant.
 
+### React DevTools (Automatic)
+
+When dev3000 detects a React project, it automatically injects React DevTools instrumentation and exposes 4 additional MCP tools:
+
+| Tool | Description |
+|------|-------------|
+| `react_devtools_get_component_tree` | Get the full React component hierarchy with element IDs |
+| `react_devtools_inspect_element` | Inspect a component's props, state, hooks, and context |
+| `react_devtools_search_components` | Find components by name pattern |
+| `react_devtools_find_component_source` | Find source file location for a component rendering a DOM element |
+
+**Example workflow:**
+
+1. Claude calls `react_devtools_get_component_tree` to see the component structure
+2. Finds a component of interest and gets its element ID
+3. Calls `react_devtools_inspect_element` with that ID to see props, state, and hooks
+4. Uses this information to understand app state and debug issues
+
+**What's inspectable:**
+
+- **Props**: All props passed to components
+- **State**: useState, useReducer values
+- **Hooks**: All hooks with their current values (useState, useEffect, useMemo, useCallback, useRef, useContext, custom hooks)
+- **Context**: Context values consumed by the component
+- **Owners**: Parent component chain
+- **Source**: File path and line number (when available)
+
+This works with any React framework: Next.js, Vite+React, Create React App, Remix, etc.
+
 ### MCP Config Control
 
 dev3000 writes MCP client config files (`.mcp.json`, `.cursor/mcp.json`, `opencode.json`) so Claude Code, Cursor, and OpenCode can connect instantly. If you don't want certain files touched, pass `--disable-mcp-configs "claude cursor"` (aliases: `.mcp.json`, `.cursor/mcp.json`, `opencode.json`, or `all`). You can also set a default via `DEV3000_DISABLE_MCP_CONFIGS`.

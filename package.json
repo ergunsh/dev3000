@@ -12,6 +12,7 @@
     "bin/",
     "dist/",
     "src/tui-interface-impl.tsx",
+    "packages/react-devtools-mcp/dist/*.js",
     "mcp-server/app/",
     "mcp-server/.next/BUILD_ID",
     "mcp-server/.next/*.json",
@@ -34,7 +35,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && mkdir -p dist/src && cp src/loading.html dist/src/ && cp src/tui-interface-impl.tsx dist/src/ && cp -r src/skills dist/",
+    "build": "tsc && mkdir -p dist/src && cp src/loading.html dist/src/ && cp src/tui-interface-impl.tsx dist/src/ && cp -r src/skills dist/ && bun run build:react-devtools",
+    "build:react-devtools": "cd packages/react-devtools-mcp && npm install && npm run build",
     "typegen": "./scripts/typegen.sh",
     "typecheck": "bun run --filter '*' typecheck",
     "format": "biome format --write .",

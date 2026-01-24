@@ -4,6 +4,12 @@ import { tmpdir } from "os"
 import { dirname, join } from "path"
 import { fileURLToPath } from "url"
 import { WebSocket } from "ws"
+import {
+  areReactDevToolsScriptsAvailable,
+  getLastScriptError,
+  getReactDevToolsMainScript,
+  getReactDevToolsPrependScript
+} from "./react-devtools-scripts"
 
 export interface CDPEvent {
   method: string
@@ -41,6 +47,7 @@ export class CDPMonitor {
   private appServerPort?: string // Port of the user's app server to monitor
   private mcpServerPort?: string // Port of dev3000's MCP server to ignore
   private headless: boolean = false // Run Chrome in headless mode
+  private isReactProject: boolean = false // Whether to inject React DevTools scripts
 
   constructor(
     profileDir: string,
@@ -52,7 +59,8 @@ export class CDPMonitor {
     appServerPort?: string,
     mcpServerPort?: string,
     debugPort?: number,
-    headless: boolean = false
+    headless: boolean = false,
+    isReactProject: boolean = false
   ) {
     this.profileDir = profileDir
     this.screenshotDir = screenshotDir
@@ -63,6 +71,7 @@ export class CDPMonitor {
     this.browserPath = browserPath
     this.pluginReactScan = pluginReactScan
     this.headless = headless
+    this.isReactProject = isReactProject
     // Use custom debug port if provided, otherwise use default 9222
     if (debugPort) {
       this.debugPort = debugPort
@@ -735,6 +744,26 @@ export class CDPMonitor {
         this.debugLog(`Failed to set viewport: ${error}`)
       }
     }
+
+    // Inject React DevTools hook BEFORE any page loads
+    // This must happen before navigation so the hook is in place when React initializes
+    if (this.isReactProject && areReactDevToolsScriptsAvailable()) {
+      this.debugLog("Registering React DevTools prepend script for injection")
+      try {
+        const prependScript = getReactDevToolsPrependScript()
+        await this.sendCDPCommand("Page.addScriptToEvaluateOnNewDocument", {
+          source: prependScript
+        })
+        this.debugLog("React DevTools prepend script registered successfully")
+        this.logger("browser", "[CDP] React DevTools hook will be injected before page loads")
+      } catch (error) {
+        this.debugLog(`Failed to register React DevTools prepend script: ${error}`)
+        this.logger("browser", `[CDP] Failed to register React DevTools hook: ${error}`)
+      }
+    } else if (this.isReactProject) {
+      const scriptError = getLastScriptError()
+      this.logger("browser", `[CDP] React DevTools scripts not available: ${scriptError || "unknown error"}`)
+    }
   }
 
   private setupEventHandlers(): void {
@@ -985,6 +1014,27 @@ export class CDPMonitor {
     this.onCDPEvent("Page.loadEventFired", async (_event) => {
       this.logger("browser", "[DOM] Load event fired")
       this.takeScreenshot("page-loaded")
+
+      // Inject React DevTools main tools after React has mounted
+      if (this.isReactProject && areReactDevToolsScriptsAvailable()) {
+        this.debugLog("Injecting React DevTools main script")
+        try {
+          const mainScript = getReactDevToolsMainScript()
+          await this.sendCDPCommand("Runtime.evaluate", {
+            expression: mainScript,
+            awaitPromise: true
+          })
+          this.debugLog("React DevTools main script injected successfully")
+          this.logger(
+            "browser",
+            "[CDP] React DevTools tools initialized (globalThis.__REACT_DEVTOOLS_MCP__.tools.react_*)"
+          )
+        } catch (error) {
+          this.debugLog(`Failed to inject React DevTools main script: ${error}`)
+          this.logger("browser", `[CDP] Failed to inject React DevTools main script: ${error}`)
+        }
+      }
+
       // Reinject interaction tracking on page load
       await this.setupInteractionTracking()
     })

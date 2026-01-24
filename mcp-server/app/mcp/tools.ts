@@ -84,6 +84,7 @@ export interface CreateIntegratedWorkflowParams {
 export interface ExecuteBrowserActionParams {
   action: string
   params?: Record<string, unknown>
+  rawResult?: boolean // If true, return the raw result without success message prefix
 }
 
 export interface GetMcpCapabilitiesParams {
@@ -1835,7 +1836,8 @@ ${availableFunctions}
 
 export async function executeBrowserAction({
   action,
-  params = {}
+  params = {},
+  rawResult = false
 }: ExecuteBrowserActionParams): Promise<{ content: Array<{ type: "text"; text: string }> }> {
   try {
     // 🎯 INTELLIGENT DELEGATION: Check if chrome-devtools MCP can handle this action
@@ -2107,7 +2109,8 @@ export async function executeBrowserAction({
 
                     cdpResult = await sendCDPCommand(ws, messageId++, "Runtime.evaluate", {
                       expression: expression,
-                      returnByValue: true
+                      returnByValue: true,
+                      awaitPromise: true
                     })
                     break
                   }
@@ -2208,6 +2211,18 @@ export async function executeBrowserAction({
         reject(error)
       })
     })
+
+    // Return raw result without prefix if requested (used by react_devtools tools)
+    if (rawResult) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2)
+          }
+        ]
+      }
+    }
 
     // Build success message with augmented suggestions
     let successMessage = `Browser action '${action}' executed successfully. Result: ${JSON.stringify(result, null, 2)}`

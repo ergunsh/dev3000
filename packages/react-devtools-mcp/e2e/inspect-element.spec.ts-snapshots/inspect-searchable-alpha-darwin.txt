@@ -1,0 +1,13 @@
+SearchableAlpha (#ID)
+
+props: (none)
+
+hooks: (none)
+
+rendered by:
+  App (#ID)
+
+source: (unknown)
+
+dom:
+  selector: [normalized]
