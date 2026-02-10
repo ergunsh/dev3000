@@ -826,6 +826,121 @@ const handler = createMcpHandler(
       }
     )
 
+    server.tool(
+      "react_devtools_profiler_start",
+      "Start React profiling to record component render times. " +
+        "Call react_devtools_profiler_stop to end profiling and get results.",
+      {},
+      async () => {
+        return executeBrowserAction({
+          action: "evaluate",
+          params: {
+            expression: `(async () => {
+              if (!globalThis.__REACT_DEVTOOLS_MCP__?.tools?.react_profiler_start) {
+                return { error: 'React DevTools not available. Ensure this is a React app and the page has loaded.' };
+              }
+              return await globalThis.__REACT_DEVTOOLS_MCP__.tools.react_profiler_start.handler({});
+            })()`
+          },
+          rawResult: true
+        })
+      }
+    )
+
+    server.tool(
+      "react_devtools_profiler_stop",
+      "Stop React profiling and return render timing results. Must call react_devtools_profiler_start first. " +
+        "Returns per-commit breakdown with hierarchical component tree showing self and total durations, " +
+        "sorted by render time. Includes a summary with total commits and total render time.",
+      {},
+      async () => {
+        return executeBrowserAction({
+          action: "evaluate",
+          params: {
+            expression: `(async () => {
+              if (!globalThis.__REACT_DEVTOOLS_MCP__?.tools?.react_profiler_stop) {
+                return { error: 'React DevTools not available. Ensure this is a React app and the page has loaded.' };
+              }
+              return await globalThis.__REACT_DEVTOOLS_MCP__.tools.react_profiler_stop.handler({});
+            })()`
+          },
+          rawResult: true
+        })
+      }
+    )
+
+    server.tool(
+      "react_devtools_get_suspense_tree",
+      "Get the React Suspense boundary tree structure. Returns a hierarchical view of all Suspense boundaries " +
+        "with their suspension status. Status markers: [SUSPENDED] (loading), [RESOLVED] (done), " +
+        "[RESOLVED 234ms] (done with timing). Use react_devtools_inspect_suspense for full details on a boundary.",
+      {
+        depth: z.number().optional().describe("Maximum depth to traverse (default: unlimited)")
+      },
+      async (params) => {
+        return executeBrowserAction({
+          action: "evaluate",
+          params: {
+            expression: `(async () => {
+              if (!globalThis.__REACT_DEVTOOLS_MCP__?.tools?.react_get_suspense_tree) {
+                return { error: 'React DevTools not available. Ensure this is a React app and the page has loaded.' };
+              }
+              return await globalThis.__REACT_DEVTOOLS_MCP__.tools.react_get_suspense_tree.handler(${JSON.stringify(params)});
+            })()`
+          },
+          rawResult: true
+        })
+      }
+    )
+
+    server.tool(
+      "react_devtools_inspect_suspense",
+      "Get detailed information about a specific Suspense boundary by ID. Returns status, timing, " +
+        "source location, suspension causes with I/O details and stack traces, rendered-by owner chain, " +
+        "and hierarchy info.",
+      {
+        id: z.number().describe("The ID of the Suspense boundary to inspect")
+      },
+      async (params) => {
+        return executeBrowserAction({
+          action: "evaluate",
+          params: {
+            expression: `(async () => {
+              if (!globalThis.__REACT_DEVTOOLS_MCP__?.tools?.react_inspect_suspense) {
+                return { error: 'React DevTools not available. Ensure this is a React app and the page has loaded.' };
+              }
+              return await globalThis.__REACT_DEVTOOLS_MCP__.tools.react_inspect_suspense.handler(${JSON.stringify(params)});
+            })()`
+          },
+          rawResult: true
+        })
+      }
+    )
+
+    server.tool(
+      "react_devtools_get_suspense_timeline",
+      "Get the timeline of Suspense boundary resolutions. Shows which I/O operations caused suspensions, " +
+        "how long each took, which component started them, and which boundary caught them. " +
+        "Most recent resolutions first.",
+      {
+        limit: z.number().optional().describe("Maximum number of timeline entries to return (default: 50)")
+      },
+      async (params) => {
+        return executeBrowserAction({
+          action: "evaluate",
+          params: {
+            expression: `(async () => {
+              if (!globalThis.__REACT_DEVTOOLS_MCP__?.tools?.react_get_suspense_timeline) {
+                return { error: 'React DevTools not available. Ensure this is a React app and the page has loaded.' };
+              }
+              return await globalThis.__REACT_DEVTOOLS_MCP__.tools.react_get_suspense_timeline.handler(${JSON.stringify(params)});
+            })()`
+          },
+          rawResult: true
+        })
+      }
+    )
+
     // Tool that returns monitoring code for Claude to execute
     // TODO: Commenting out for now - need to figure out the right approach for proactive monitoring
     /*
