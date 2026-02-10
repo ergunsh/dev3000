@@ -40,7 +40,7 @@ npm run start
 
 This script:
 1. Builds the project (both prepend and main scripts)
-2. Starts the sample React app on `http://localhost:5173`
+2. Starts the sample React app on `http://localhost:5199`
 3. Launches Chrome with DevTools open
 4. Injects the prepend script (before React loads)
 5. Navigates to the sample app
@@ -71,11 +71,11 @@ npm run test:e2e       # Run Playwright E2E tests
 npm run test:e2e:ui    # Run tests with Playwright UI
 ```
 
-This runs Playwright tests against the sample React app, verifying:
-- Hook injection works without browser extension
-- Component tree retrieval
-- Element inspection
-- Component search
+This runs Playwright tests against two sample apps:
+- **sample-app** (Vite, port 5199): Core tool tests (hook injection, tree, inspect, search, profiler, suspense)
+- **sample-app-for-suspense** (Next.js App Router, port 3999): Next.js-specific Suspense tests (SSR boundaries, source map resolution, nested boundaries)
+
+Both servers are started automatically by Playwright via the `webServer` config.
 
 ### Manual Testing
 
@@ -153,6 +153,10 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed information about the code
 ### Element IDs not found
 **Cause:** Tree store not populated yet.
 **Fix:** Ensure `flushInitialOperations()` is called after initialization.
+
+### Source locations showing compiled chunk paths instead of original files
+**Cause:** SSR chunks use compiled URLs (`[root-of-the-server]__55484ccc._.js:942`). The runtime URLs return 404 from the dev server.
+**Fix:** Use `source-location-resolver.ts` which fetches sectioned source maps from the Next.js `/__nextjs_source-map` endpoint and resolves to original source files. This only works with Next.js dev server.
 
 ## Code Style
 

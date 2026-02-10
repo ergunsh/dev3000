@@ -14,16 +14,18 @@ const mainScript = fs.readFileSync(
 // Helper to set up page with scripts injected
 async function setupPage(page: import('@playwright/test').Page) {
   await page.addInitScript(prependScript);
-  await page.goto('http://localhost:5173');
+  await page.goto('http://localhost:5199');
   await page.waitForSelector('#root');
   await page.evaluate(mainScript);
   await page.waitForFunction(
     () =>
       (
         globalThis as unknown as {
-          tools?: {react_get_component_tree?: unknown};
+          __REACT_DEVTOOLS_MCP__?: {
+            tools?: {react_get_component_tree?: unknown};
+          };
         }
-      ).tools?.react_get_component_tree
+      ).__REACT_DEVTOOLS_MCP__?.tools?.react_get_component_tree
   );
 }
 
@@ -36,13 +38,15 @@ async function getComponentTree(
     (p) =>
       (
         globalThis as unknown as {
-          tools: {
-            react_get_component_tree: {
-              handler: (params: unknown) => Promise<string>;
+          __REACT_DEVTOOLS_MCP__: {
+            tools: {
+              react_get_component_tree: {
+                handler: (params: unknown) => Promise<string>;
+              };
             };
           };
         }
-      ).tools.react_get_component_tree.handler(p),
+      ).__REACT_DEVTOOLS_MCP__.tools.react_get_component_tree.handler(p),
     params
   );
 }

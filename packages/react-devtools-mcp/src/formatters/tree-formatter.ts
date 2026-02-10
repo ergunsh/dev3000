@@ -4,7 +4,6 @@ import type {TreeNode, InspectedElementData} from '../types';
  * Options for tree formatting
  */
 export interface TreeFormatOptions {
-  includeLegend?: boolean;
   /** Map of element ID to inspected element data for inline props/hooks */
   inspectionData?: Map<number, InspectedElementData>;
 }
@@ -157,33 +156,13 @@ function renderTree(
 }
 
 /**
- * The legend explaining the output format
- */
-const TREE_LEGEND = `=== Legend ===
-{key: value}              → props (inputs to component)
-state(value, ...)         → useState values (in hook order)
-memo(value)               → useMemo computed value
-ref(value)                → useRef current value
-context(value)            → useContext value
-[Memo] [ForwardRef]       → component type badges
-
-Use inspect(id) for full component details.
-`;
-
-/**
  * Format a component tree as ASCII text output
  */
 export function formatComponentTree(
   roots: TreeNode[],
   options: TreeFormatOptions = {}
 ): string {
-  const {includeLegend = true} = options;
-
   const lines: string[] = [];
-
-  if (includeLegend) {
-    lines.push(TREE_LEGEND);
-  }
 
   lines.push('=== Component Tree ===');
   lines.push('');

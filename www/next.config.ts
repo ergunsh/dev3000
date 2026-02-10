@@ -8,7 +8,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  reactCompiler: true,
+  reactCompiler: process.env.NODE_ENV === "production",
   typedRoutes: true,
   cacheComponents: true,
   experimental: {

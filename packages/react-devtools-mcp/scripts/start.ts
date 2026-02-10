@@ -91,7 +91,7 @@ function startSampleApp(): Promise<ReturnType<typeof spawn>> {
       const output = data.toString();
       if (output.includes('Local:') && !resolved) {
         resolved = true;
-        logSuccess('Sample app started at http://localhost:5173');
+        logSuccess('Sample app started at http://localhost:5199');
         resolve(child);
       }
     };
@@ -115,7 +115,7 @@ function startSampleApp(): Promise<ReturnType<typeof spawn>> {
     setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        logSuccess('Sample app should be starting at http://localhost:5173');
+        logSuccess('Sample app should be starting at http://localhost:5199');
         resolve(child);
       }
     }, 10000);
@@ -149,7 +149,7 @@ async function launchBrowser() {
 
   // Navigate to the sample app
   logStep(4, 'Navigating to sample app...');
-  await page.goto('http://localhost:5173');
+  await page.goto('http://localhost:5199');
   await page.waitForSelector('#root');
   logSuccess('Sample app loaded');
 

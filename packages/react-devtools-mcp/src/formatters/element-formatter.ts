@@ -1,4 +1,4 @@
-import type {InspectElementResult, HookInfo, OwnerInfo, DomPathInfo} from '../types';
+import type {InspectElementResult, HookInfo, OwnerInfo, DomPathInfo, SuspendedByInfo, ReactStackFrame} from '../types';
 
 /**
  * Format a value for display with proper indentation
@@ -87,21 +87,137 @@ function formatHooks(hooks: HookInfo[] | null): string {
 }
 
 /**
- * Format rendered-by chain (owners)
+ * Format byte size for display
  */
-function formatRenderedBy(owners: OwnerInfo[]): string {
-  if (owners.length === 0) {
+function formatByteSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+/**
+ * Format stack frame for display
+ */
+function formatStackFrame(frame: ReactStackFrame): string {
+  const fn = frame.functionName ?? '(anonymous)';
+  const file = frame.fileName?.split('/').pop() ?? '(unknown)';
+  return `${fn} @ ${file}:${frame.lineNumber}`;
+}
+
+/**
+ * Format suspendedBy section
+ */
+function formatSuspendedBy(
+  suspendedBy: SuspendedByInfo[],
+  unknownReason: string | null
+): string {
+  const lines: string[] = ['suspended by:'];
+
+  for (let i = 0; i < suspendedBy.length; i++) {
+    const info = suspendedBy[i];
+    const num = i + 1;
+
+    // Header: name and timing
+    const status = info.endTime > 0
+      ? `resolved in ${info.duration.toFixed(0)}ms`
+      : `pending, ${info.duration.toFixed(0)}ms so far`;
+    const bytes = info.byteSize != null
+      ? `, ${formatByteSize(info.byteSize)}`
+      : '';
+    const desc = info.description ? ` "${info.description}"` : '';
+    const env = info.environment ? ` [${info.environment}]` : '';
+
+    lines.push(`  ${num}. ${info.name}${desc} (${status}${bytes})${env}`);
+
+    // I/O stack trace (where the async operation was initiated)
+    if (info.startedBy?.stack && info.startedBy.stack.length > 0) {
+      for (const frame of info.startedBy.stack) {
+        lines.push(`     ${formatStackFrame(frame)}`);
+      }
+    }
+
+    // Started by component
+    if (info.startedBy?.componentName) {
+      const envTag = info.startedBy.environment
+        ? ` [${info.startedBy.environment}]`
+        : '';
+      lines.push(`     started by: ${info.startedBy.componentName}${envTag}`);
+    }
+
+    // Awaited at stack trace
+    if (info.awaitedBy?.stack && info.awaitedBy.stack.length > 0) {
+      lines.push('     awaited at:');
+      for (const frame of info.awaitedBy.stack) {
+        lines.push(`       ${formatStackFrame(frame)}`);
+      }
+    }
+
+    // Awaited by component
+    if (info.awaitedBy?.componentName) {
+      const envTag = info.awaitedBy.environment
+        ? ` [${info.awaitedBy.environment}]`
+        : '';
+      lines.push(`     awaited by: ${info.awaitedBy.componentName}${envTag}`);
+    }
+  }
+
+  // Unknown suspenders warning
+  if (unknownReason) {
+    switch (unknownReason) {
+      case 'production':
+        lines.push('  (some suspenders unknown — use development build for details)');
+        break;
+      case 'old-version':
+        lines.push('  (some suspenders unknown — upgrade React for full tracking)');
+        break;
+      case 'thrown-promise':
+        lines.push('  (some suspenders unknown — library using thrown Promises instead of use())');
+        break;
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Format rendered-by chain (owners) with source locations and env tags
+ */
+function formatRenderedBy(
+  owners: OwnerInfo[],
+  rootType?: string | null,
+  rendererInfo?: string | null
+): string {
+  if (owners.length === 0 && !rootType) {
     return 'rendered by: (root)';
   }
 
-  const chain = owners
-    .map((owner) => {
-      const name = owner.displayName ?? 'Anonymous';
-      return `${name} (#${owner.id})`;
-    })
-    .join(' > ');
+  const lines: string[] = ['rendered by:'];
 
-  return `rendered by:\n  ${chain}`;
+  for (const owner of owners) {
+    const name = owner.displayName ?? 'Anonymous';
+    const envTag = owner.env ? ` [${owner.env}]` : '';
+
+    // Include source location from first stack frame
+    if (owner.stack && owner.stack.length > 0 && owner.stack[0].fileName) {
+      const frame = owner.stack[0];
+      const file = frame.fileName.split('/').pop();
+      lines.push(`  ${name} @ ${file}:${frame.lineNumber}${envTag}`);
+    } else {
+      lines.push(`  ${name} (#${owner.id})${envTag}`);
+    }
+  }
+
+  // Root type (e.g., "hydrateRoot()", "createRoot()")
+  if (rootType) {
+    lines.push(`  ${rootType}`);
+  }
+
+  // Renderer info
+  if (rendererInfo) {
+    lines.push(`  ${rendererInfo}`);
+  }
+
+  return lines.join('\n');
 }
 
 /**
@@ -157,8 +273,23 @@ export function formatInspectedElement(result: InspectElementResult): string {
 
   // Header: ComponentName (#id)
   const name = result.name ?? 'Unknown';
-  lines.push(`${name} (#${result.id})`);
+  const envTag = result.env ? ` [${result.env}]` : '';
+  lines.push(`${name} (#${result.id})${envTag}`);
+
+  // Suspension status (show prominently if suspended)
+  if (result.isSuspended === true) {
+    lines.push('Status: SUSPENDED');
+  }
   lines.push('');
+
+  // Suspended by (BEFORE props — most important for debugging)
+  if (result.suspendedBy && result.suspendedBy.length > 0) {
+    lines.push(formatSuspendedBy(result.suspendedBy, result.unknownSuspendersReason));
+    lines.push('');
+  } else if (result.unknownSuspendersReason) {
+    lines.push(formatSuspendedBy([], result.unknownSuspendersReason));
+    lines.push('');
+  }
 
   // Props section
   lines.push(formatProps(result.props));
@@ -175,8 +306,11 @@ export function formatInspectedElement(result: InspectElementResult): string {
     lines.push('');
   }
 
-  // Rendered-by chain
-  lines.push(formatRenderedBy(result.owners));
+  // Rendered-by chain (enriched)
+  const rendererInfo = result.rendererPackageName && result.rendererVersion
+    ? `${result.rendererPackageName}@${result.rendererVersion}`
+    : null;
+  lines.push(formatRenderedBy(result.owners, result.rootType, rendererInfo));
   lines.push('');
 
   // Source location

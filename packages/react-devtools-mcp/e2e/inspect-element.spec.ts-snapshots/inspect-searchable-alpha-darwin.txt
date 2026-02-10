@@ -6,8 +6,11 @@ hooks: (none)
 
 rendered by:
   App (#ID)
+  createRoot()
+  react-dom@19.2.0
 
-source: (unknown)
+source:
+  App.tsx
 
 dom:
   selector: [normalized]

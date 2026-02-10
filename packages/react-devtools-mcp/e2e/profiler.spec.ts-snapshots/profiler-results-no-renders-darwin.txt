@@ -1,0 +1,4 @@
+Profiling Results (N commits captured)
+
+No renders were recorded during the profiling session.
+Try interacting with the application to trigger re-renders.

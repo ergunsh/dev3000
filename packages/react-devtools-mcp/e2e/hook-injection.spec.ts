@@ -17,7 +17,7 @@ test.describe('Hook Injection', () => {
     await page.addInitScript(prependScript);
 
     // Navigate to sample React app
-    await page.goto('http://localhost:5173');
+    await page.goto('http://localhost:5199');
 
     // Wait for React to mount
     await page.waitForSelector('#root');
@@ -59,7 +59,7 @@ test.describe('Hook Injection', () => {
 
   test('should inspect element props and state', async ({page}) => {
     await page.addInitScript(prependScript);
-    await page.goto('http://localhost:5173');
+    await page.goto('http://localhost:5199');
     await page.waitForSelector('#root');
     await page.evaluate(mainScript);
     await page.waitForFunction(
@@ -120,7 +120,7 @@ test.describe('Hook Injection', () => {
 
   test('should search for components by name', async ({page}) => {
     await page.addInitScript(prependScript);
-    await page.goto('http://localhost:5173');
+    await page.goto('http://localhost:5199');
     await page.waitForSelector('#root');
     await page.evaluate(mainScript);
     await page.waitForFunction(
@@ -190,7 +190,7 @@ test.describe('Hook Injection', () => {
       }
     });
 
-    await page.goto('http://localhost:5173');
+    await page.goto('http://localhost:5199');
     await page.waitForSelector('#root');
     await page.evaluate(mainScript);
 
@@ -226,7 +226,7 @@ test.describe('Hook Injection', () => {
 
   test('should find components with props and state', async ({page}) => {
     await page.addInitScript(prependScript);
-    await page.goto('http://localhost:5173');
+    await page.goto('http://localhost:5199');
     await page.waitForSelector('#root');
     await page.evaluate(mainScript);
     await page.waitForFunction(

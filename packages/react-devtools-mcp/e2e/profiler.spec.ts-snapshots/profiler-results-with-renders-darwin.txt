@@ -1,0 +1,67 @@
+=== Profiling Results (N commits captured) ===
+
+Root: App
+
+Commit 1 | priority: Immediate
+  ComplexPropsComponent
+  Counter
+  CounterDisplay
+  CustomHookComponent
+  ForwardRef(ForwardRefInput2)
+  FragmentWrapper
+  ItemList
+  Memo(MemoizedDisplay2)
+  MultipleHooksComponent
+  NestedLevel
+  ThemeDisplay
+  Timer
+  counterHelper
+
+Commit 2 | priority: Immediate
+  ComplexPropsComponent
+  Counter
+  CounterDisplay
+  CustomHookComponent
+  ForwardRef(ForwardRefInput2)
+  FragmentWrapper
+  ItemList
+  Memo(MemoizedDisplay2)
+  MultipleHooksComponent
+  NestedLevel
+  ThemeDisplay
+  Timer
+  counterHelper
+
+Commit 3 | priority: Normal
+  ComplexPropsComponent
+  Counter
+  CounterDisplay
+  CustomHookComponent
+  ForwardRef(ForwardRefInput2)
+  FragmentWrapper
+  ItemList
+  Memo(MemoizedDisplay2)
+  MultipleHooksComponent
+  NestedLevel
+  ThemeDisplay
+  Timer
+  counterHelper
+
+Commit 4 | priority: Immediate
+  ComplexPropsComponent
+  Counter
+  CounterDisplay
+  CustomHookComponent
+  ForwardRef(ForwardRefInput2)
+  FragmentWrapper
+  ItemList
+  Memo(MemoizedDisplay2)
+  MultipleHooksComponent
+  NestedLevel
+  ThemeDisplay
+  Timer
+  counterHelper
+
+=== Summary ===
+Total commits: N
+Total render time: Xms

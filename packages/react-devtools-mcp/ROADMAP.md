@@ -40,22 +40,9 @@ hooks:
 
 ---
 
-### 2. Profiling Support
+### ~~2. Profiling Support~~ ✅ Completed
 
-**Status:** Not Started
-
-**Problem:**
-No access to React's profiling data for performance analysis.
-
-**Potential Tools:**
-- `react_start_profiling` - Start recording
-- `react_stop_profiling` - Stop recording and return data
-- `react_get_profiling_data` - Get commit/render timing data
-
-**Implementation Notes:**
-- Reference: `react-devtools-shared/src/backend/profilingHooks.js`
-- Profiling must be enabled on the React build
-- Data includes commit durations, render times, component updates
+See Completed section below.
 
 ---
 
@@ -104,14 +91,15 @@ Cannot visually highlight components in the browser like DevTools does.
 
 ### 5. Timeline/Scheduler Integration
 
-**Status:** Not Started
+**Status:** Not Started (Suspense-related tools already completed — see below)
 
 **Problem:**
 No visibility into React's scheduling and concurrent features.
 
 **Potential Tools:**
 - `react_get_pending_transitions` - See in-progress transitions
-- `react_get_suspense_state` - Detailed Suspense boundary information
+
+**Note:** Suspense boundary inspection (`react_get_suspense_tree`, `react_inspect_suspense`, `react_get_suspense_timeline`) is already implemented. What remains is scheduler/transition-level visibility.
 
 ---
 
@@ -121,7 +109,7 @@ No visibility into React's scheduling and concurrent features.
 - [x] Fix `inspectElement` path parameter (was passing object instead of array)
 - [x] Fix hooks/props/state/context DehydratedData unwrapping
 - [x] Add `hookSource` for hook source location information
-- [x] **Self-contained hook injection** - Package now includes its own DevTools hook injection via `react-devtools-inline`. No browser extension required. Two-script approach:
+- [x] **Self-contained hook injection** - Package now includes its own DevTools hook injection via `react-devtools-core`. No browser extension required. Two-script approach:
   - `react-devtools-mcp-prepend.iife.js` - Injects hook before React loads
   - `react-devtools-mcp.iife.js` - Main tools that use the hook
   - Works with Playwright (`page.addInitScript`) and Puppeteer (`page.evaluateOnNewDocument`)
@@ -132,6 +120,25 @@ No visibility into React's scheduling and concurrent features.
   - Output shows `State(count):` instead of `State:`
   - Graceful degradation when source can't be fetched
   - Ported from React DevTools' `parseHookNames` implementation
+- [x] **Profiling support** - Two tools for profiling component render times:
+  - `react_profiler_start` - Start recording render timing data
+  - `react_profiler_stop` - Stop recording and return formatted profiling results
+  - Shows per-commit render trees with self/total durations
+  - Core module: `profiler-store.ts` manages profiling state across renderers
+  - Formatter: `profiler-formatter.ts` produces ASCII-tree output
+  - E2E tests in `profiler.spec.ts`
+- [x] **Suspense boundary tools** - Three tools for inspecting React Suspense boundaries:
+  - `react_get_suspense_tree` - Hierarchical Suspense boundary tree with live status
+  - `react_inspect_suspense` - Detailed boundary info (props, owner chain, suspendedBy, source)
+  - `react_get_suspense_timeline` - Timeline of boundary resolutions (reconstructed from fiber data)
+  - Core module: `suspense-store.ts` tracks boundaries via DevTools operations
+  - Formatter: `suspense-formatter.ts` produces text output with status badges
+  - E2E tests in `suspense.spec.ts` and `nextjs.suspense.spec.ts`
+- [x] **Source location resolution (Next.js / Turbopack)** - Resolves compiled chunk paths to original source files:
+  - SSR chunks: uses Next.js `/__nextjs_source-map` endpoint with sectioned source maps
+  - Client chunks: fetches chunk source and extracts `//# sourceMappingURL`
+  - Integrated into `react_inspect_suspense` for element source and owner stacks
+  - Utility: `source-location-resolver.ts`
 
 ---
 
@@ -155,8 +162,11 @@ No visibility into React's scheduling and concurrent features.
 ### E2E Test Coverage
 
 Current E2E tests (`npm run test:e2e`) verify:
-- Hook injection works without browser extension
-- Component tree retrieval returns valid data
-- Element inspection works
-- Component search by name works
-- Scripts work in correct injection order (prepend before main)
+- Hook injection works without browser extension (`hook-injection.spec.ts`)
+- Component tree retrieval returns valid data (`get-component-tree.spec.ts`)
+- Element inspection with props, hooks, state (`inspect-element.spec.ts`)
+- Component search by name (`search-components.spec.ts`)
+- Source file location for DOM elements (`find-component-source.spec.ts`)
+- Profiler start/stop with render data (`profiler.spec.ts`)
+- Suspense boundary tree and inspection (`suspense.spec.ts`)
+- Next.js-specific Suspense with SSR and source map resolution (`nextjs.suspense.spec.ts`)

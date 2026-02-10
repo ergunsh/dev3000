@@ -14,6 +14,8 @@ hooks:
 
 rendered by:
   App (#ID)
+  createRoot()
+  react-dom@19.2.0
 
 source:
   App.tsx

@@ -34,7 +34,10 @@ Initial Paint (#ID)
       │  └─ SearchableGamma (#ID)
       ├─ CounterDisplay (#ID)
       ├─ counterHelper (#ID)
-      └─ StyledSection (#ID)
-         ├─ ButtonWrapper (#ID)
-         ├─ ExternalComponent (#ID)
-         └─ AnotherExternalComponent (#ID)
+      ├─ StyledSection (#ID)
+      │  ├─ ButtonWrapper (#ID)
+      │  ├─ ExternalComponent (#ID)
+      │  └─ AnotherExternalComponent (#ID)
+      ├─ App (#ID) [Suspense]
+      └─ App (#ID) [Suspense]
+         └─ App (#ID) [Suspense]

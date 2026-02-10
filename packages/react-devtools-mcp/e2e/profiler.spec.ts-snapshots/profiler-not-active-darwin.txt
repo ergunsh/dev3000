@@ -1,0 +1,1 @@
+Failed to stop profiling: Profiling is not active

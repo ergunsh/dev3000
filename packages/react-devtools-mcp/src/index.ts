@@ -1,6 +1,8 @@
 import {createHookAccessor} from './core/hook-accessor';
 import {createTreeStore} from './core/tree-store';
 import {createRendererBridge} from './core/renderer-bridge';
+import {createProfilerStore} from './core/profiler-store';
+import {createSuspenseStore} from './core/suspense-store';
 import {createTools} from './tools';
 import type {Tools} from './types';
 
@@ -76,9 +78,12 @@ export async function initialize(
     // Create core modules
     const treeStore = createTreeStore(hookAccessor);
     const rendererBridge = createRendererBridge(hookAccessor);
+    const profilerStore = createProfilerStore(hookAccessor);
+    const suspenseStore = createSuspenseStore(hookAccessor);
 
-    // Initialize tree store to listen for operations
+    // Initialize stores to listen for operations
     treeStore.initialize();
+    suspenseStore.initialize();
 
     // Flush initial operations to populate tree store
     if (flushInitialOperations) {
@@ -86,7 +91,7 @@ export async function initialize(
     }
 
     // Create tools
-    const tools = createTools(treeStore, rendererBridge);
+    const tools = createTools(treeStore, rendererBridge, profilerStore, suspenseStore);
 
     // Register tools on globalThis
     (globalThis as {__REACT_DEVTOOLS_MCP__?: {tools: Tools}}).__REACT_DEVTOOLS_MCP__ = {tools};
@@ -101,6 +106,11 @@ export async function initialize(
     console.log(
       '  - react_find_component_source: Find source file for a DOM element'
     );
+    console.log('  - react_profiler_start: Start profiling render times');
+    console.log('  - react_profiler_stop: Stop profiling and get results');
+    console.log('  - react_get_suspense_tree: Get Suspense boundary tree');
+    console.log('  - react_inspect_suspense: Get details about a Suspense boundary');
+    console.log('  - react_get_suspense_timeline: Get Suspense resolution timeline');
 
     return {
       success: true,
@@ -172,10 +182,19 @@ export type {
   SearchComponentsParams,
   SearchComponentsResult,
   SearchMatch,
+  // Suspense types
+  SuspenseNode,
+  SuspenseTreeNode,
+  SuspenseTimelineStep,
+  GetSuspenseTreeParams,
+  InspectSuspenseParams,
+  GetSuspenseTimelineParams,
 } from './types';
 
 // Export core modules for advanced usage
 export {createHookAccessor} from './core/hook-accessor';
 export {createTreeStore} from './core/tree-store';
 export {createRendererBridge} from './core/renderer-bridge';
+export {createProfilerStore} from './core/profiler-store';
+export {createSuspenseStore} from './core/suspense-store';
 export {createTools} from './tools';

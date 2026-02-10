@@ -14,13 +14,18 @@ const mainScript = fs.readFileSync(
 // Helper to setup page with DevTools scripts
 async function setupPage(page: import('@playwright/test').Page) {
   await page.addInitScript(prependScript);
-  await page.goto('http://localhost:5173');
+  await page.goto('http://localhost:5199');
   await page.waitForSelector('#root');
   await page.evaluate(mainScript);
   await page.waitForFunction(
     () =>
-      (globalThis as unknown as {tools?: {react_find_component_source?: unknown}})
-        .tools?.react_find_component_source
+      (
+        globalThis as unknown as {
+          __REACT_DEVTOOLS_MCP__?: {
+            tools?: {react_find_component_source?: unknown};
+          };
+        }
+      ).__REACT_DEVTOOLS_MCP__?.tools?.react_find_component_source
   );
 }
 
@@ -33,13 +38,15 @@ async function findComponentSource(
     (sel: string) =>
       (
         globalThis as unknown as {
-          tools: {
-            react_find_component_source: {
-              handler: (params: {selector: string}) => Promise<string>;
+          __REACT_DEVTOOLS_MCP__: {
+            tools: {
+              react_find_component_source: {
+                handler: (params: {selector: string}) => Promise<string>;
+              };
             };
           };
         }
-      ).tools.react_find_component_source.handler({selector: sel}),
+      ).__REACT_DEVTOOLS_MCP__.tools.react_find_component_source.handler({selector: sel}),
     selector
   );
 }

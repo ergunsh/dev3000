@@ -108,8 +108,16 @@ export function createSearchComponentsTool(
   };
 
   return {
-    description:
-      'Find React components by name pattern. Searches through all mounted components and returns matches with their context.',
+    description: `Find React components by name pattern. Searches through all mounted components and returns matches with their ancestor path. Component IDs can be used with react_inspect_element.
+
+Example output:
+  Found 3 components matching "Button":
+
+  1. Button (#42) at App > Header
+  2. IconButton (#58) at App > Toolbar
+  3. SubmitButton (#71) at App > Form
+
+  Use inspect(id) for details.`,
     inputs: {
       type: 'object',
       properties: {

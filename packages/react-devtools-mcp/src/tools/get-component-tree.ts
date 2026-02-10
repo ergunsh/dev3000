@@ -117,12 +117,23 @@ export function createGetComponentTreeTool(
     }
 
     // Format as text output
-    return formatComponentTree(rootNodes, {includeLegend: true});
+    return formatComponentTree(rootNodes);
   };
 
   return {
-    description:
-      'Get the React component tree structure. Returns a hierarchical view of all mounted React components.',
+    description: `Get the React component tree structure. Returns a hierarchical view of all mounted React components with component IDs for use with react_inspect_element.
+
+Shows type badges [Memo], [ForwardRef], [Suspense], [Context] for special component types.
+
+Example output:
+  === Component Tree ===
+
+  App (#1)
+  ├─ Header (#2) [Memo]
+  │  ├─ Nav (#3)
+  │  └─ Logo (#4) [ForwardRef]
+  └─ Main (#5)
+     └─ Content (#6)`,
     inputs: {
       type: 'object',
       properties: {

@@ -56,6 +56,11 @@ export interface Tools {
   react_inspect_element: Tool<InspectElementParams, string>;
   react_search_components: Tool<SearchComponentsParams, string>;
   react_find_component_source: Tool<FindComponentSourceParams, string>;
+  react_profiler_start: Tool<ProfilerStartParams, string>;
+  react_profiler_stop: Tool<ProfilerStopParams, string>;
+  react_get_suspense_tree: Tool<GetSuspenseTreeParams, string>;
+  react_inspect_suspense: Tool<InspectSuspenseParams, string>;
+  react_get_suspense_timeline: Tool<GetSuspenseTimelineParams, string>;
 }
 
 // Tool parameter and result types
@@ -106,6 +111,8 @@ export interface OwnerInfo {
   id: number;
   displayName: string | null;
   type: string;
+  env: string | null;
+  stack: ReactStackFrame[] | null;
 }
 
 export interface DomPathInfo {
@@ -125,6 +132,16 @@ export interface InspectElementResult {
   key: string | number | null;
   env: string | null;
   domPath: DomPathInfo | null;
+
+  // Suspension info
+  isSuspended: boolean | null;
+  suspendedBy: SuspendedByInfo[] | null;
+  unknownSuspendersReason: string | null;
+
+  // Root and renderer info (for rendered-by chain)
+  rootType: string | null;
+  rendererPackageName: string | null;
+  rendererVersion: string | null;
 }
 
 export interface SearchComponentsParams {
@@ -157,6 +174,90 @@ export interface FindComponentSourceResult {
   owners: string[];
 }
 
+// Profiler tool parameter types
+export interface ProfilerStartParams {}
+export interface ProfilerStopParams {}
+
+// Suspense types
+export interface SuspenseNode {
+  id: number;
+  parentID: number; // 0 = root-level
+  children: number[];
+  name: string | null;
+  isSuspended: boolean;
+  hasUniqueSuspenders: boolean;
+  environments: string[]; // Server environments (RSC)
+  endTime: number; // Resolution time (0 = pending)
+}
+
+export interface SuspenseTreeNode extends SuspenseNode {
+  depth: number;
+  childNodes: SuspenseTreeNode[];
+}
+
+export interface SuspenseTimelineStep {
+  id: number;
+  name: string | null;
+  environment: string | null;
+  endTime: number;
+  // Per-suspender detail (from fiber inspection at query time)
+  suspenderName?: string | null;
+  suspenderDescription?: string | null;
+  duration?: number;
+  startTime?: number;
+  startedByComponent?: string | null;
+  startedBySource?: string | null;
+  suspenderEnvironment?: string | null;
+}
+
+// Suspense tool parameter types
+export interface GetSuspenseTreeParams {
+  depth?: number;
+}
+
+export interface InspectSuspenseParams {
+  id: number;
+}
+
+export interface GetSuspenseTimelineParams {
+  limit?: number;
+}
+
+// Profiling data types from React DevTools
+export interface ChangeDescription {
+  context: Array<string> | boolean | null;
+  didHooksChange: boolean;
+  isFirstMount: boolean;
+  props: Array<string> | null;
+  state: Array<string> | null;
+  hooks: Array<number> | null;
+}
+
+export interface CommitDataBackend {
+  changeDescriptions: Array<[number, ChangeDescription]> | null;
+  duration: number;
+  effectDuration: number | null;
+  fiberActualDurations: Array<[number, number]>;
+  fiberSelfDurations: Array<[number, number]>;
+  passiveEffectDuration: number | null;
+  priorityLevel: string | null;
+  timestamp: number;
+  updaters: SerializedElement[] | null;
+}
+
+export interface ProfilingDataForRootBackend {
+  commitData: CommitDataBackend[];
+  displayName: string;
+  initialTreeBaseDurations: Array<[number, number]>;
+  rootID: number;
+}
+
+export interface ProfilingDataBackend {
+  dataForRoots: ProfilingDataForRootBackend[];
+  rendererID: number;
+  timelineData: unknown | null;
+}
+
 // Element info stored in TreeStore
 export interface ElementInfo {
   id: number;
@@ -179,7 +280,64 @@ export interface SerializedElement {
   id: number;
   key: number | string | null;
   env: string | null;
+  stack: ReactStackTrace | null;
+  hocDisplayNames: string[] | null;
+  compiledWithForget: boolean;
   type: ElementType;
+}
+
+// Stack trace types from React DevTools
+export type ReactStackFrame = {
+  fileName: string;
+  lineNumber: number;
+  columnNumber: number;
+  functionName: string | null;
+};
+
+export type ReactStackTrace = ReactStackFrame[];
+
+// Suspension tracking types
+export interface SerializedIOInfo {
+  name: string;
+  description: string;
+  start: number;
+  end: number;
+  byteSize: number | null;
+  value: unknown;
+  env: string | null;
+  owner: SerializedElement | null;
+  stack: ReactStackTrace | null;
+}
+
+export interface SerializedAsyncInfo {
+  awaited: SerializedIOInfo;
+  env: string | null;
+  owner: SerializedElement | null;
+  stack: ReactStackTrace | null;
+}
+
+export interface SuspendedByInfo {
+  name: string;
+  description: string;
+  startTime: number;
+  endTime: number;
+  duration: number;
+  byteSize: number | null;
+  environment: string | null;
+
+  startedBy: {
+    componentName: string | null;
+    componentId: number | null;
+    environment: string | null;
+    stack: ReactStackFrame[] | null;
+  } | null;
+
+  awaitedBy: {
+    componentName: string | null;
+    componentId: number | null;
+    environment: string | null;
+    stack: ReactStackFrame[] | null;
+  } | null;
 }
 
 export interface PathFrame {
@@ -231,6 +389,14 @@ export interface InspectedElementData {
   rendererVersion: string | null;
   plugins: object;
   nativeTag: number | null;
+
+  // Suspension information (returned by renderer, previously not typed)
+  suspendedBy: object | null; // DehydratedData-wrapped Array<SerializedAsyncInfo>
+  suspendedByRange: [number, number] | null;
+  unknownSuspenders: number; // 0=none, 1=production, 2=old-version, 3=thrown-promise
+
+  // Component stack (for richer rendered-by)
+  stack: ReactStackTrace | null;
 }
 
 export interface RendererInterface {
@@ -254,6 +420,10 @@ export interface RendererInterface {
   // DOM-to-component mapping methods (official React DevTools API)
   getNearestMountedDOMNode: (publicInstance: Element) => Element | null;
   getElementIDForHostInstance: (publicInstance: Element) => number | null;
+  // Profiling methods
+  startProfiling: (recordChangeDescriptions: boolean, recordTimeline: boolean) => void;
+  stopProfiling: () => void;
+  getProfilingData: () => ProfilingDataBackend;
 }
 
 export interface ReactRenderer {

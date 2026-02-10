@@ -50,12 +50,49 @@ export interface UpdateErrorsWarningsOperation {
   warningCount: number;
 }
 
+// Suspense operation types
+export interface SuspenseAddOperation {
+  type: 'suspenseAdd';
+  id: number;
+  parentID: number;
+  name: string | null;
+  isSuspended: boolean;
+}
+
+export interface SuspenseRemoveOperation {
+  type: 'suspenseRemove';
+  ids: number[];
+}
+
+export interface SuspenseReorderChildrenOperation {
+  type: 'suspenseReorderChildren';
+  parentID: number;
+  children: number[];
+}
+
+export interface SuspenseSuspendersChange {
+  id: number;
+  hasUniqueSuspenders: boolean;
+  endTime: number;
+  isSuspended: boolean;
+  environments: string[];
+}
+
+export interface SuspenseSuspendersOperation {
+  type: 'suspenseSuspenders';
+  changes: SuspenseSuspendersChange[];
+}
+
 export type ParsedOperation =
   | AddOperation
   | RemoveOperation
   | RemoveRootOperation
   | ReorderChildrenOperation
-  | UpdateErrorsWarningsOperation;
+  | UpdateErrorsWarningsOperation
+  | SuspenseAddOperation
+  | SuspenseRemoveOperation
+  | SuspenseReorderChildrenOperation
+  | SuspenseSuspendersOperation;
 
 export interface ParsedOperations {
   rendererID: number;
@@ -317,35 +354,71 @@ export function parseOperations(operations: number[]): ParsedOperations {
         break;
 
       case SUSPENSE_TREE_OPERATION_ADD: {
-        // Skip Suspense tree add operation
+        // Parse Suspense tree add operation
         // Format: id, parentID, nameStringID, isSuspended, numRects
+        const suspenseId = operations[i + 1];
+        const parentID = operations[i + 2];
+        const nameStringID = operations[i + 3];
+        const isSuspended = operations[i + 4] === 1;
         const numRects = operations[i + 5];
         i += 6;
         // Skip rect data if present (4 values per rect: x, y, width, height)
         if (numRects !== -1) {
           i += numRects * 4;
         }
+
+        result.operations.push({
+          type: 'suspenseAdd',
+          id: suspenseId,
+          parentID,
+          name: result.stringTable[nameStringID],
+          isSuspended,
+        });
         break;
       }
 
       case SUSPENSE_TREE_OPERATION_REMOVE: {
-        // Skip Suspense tree remove operation
+        // Parse Suspense tree remove operation
         // Format: removeLength, then removeLength ids
         const removeLength = operations[i + 1];
-        i += 2 + removeLength;
+        i += 2;
+
+        const ids: number[] = [];
+        for (let j = 0; j < removeLength; j++) {
+          ids.push(operations[i]);
+          i++;
+        }
+
+        result.operations.push({
+          type: 'suspenseRemove',
+          ids,
+        });
         break;
       }
 
       case SUSPENSE_TREE_OPERATION_REORDER_CHILDREN: {
-        // Skip Suspense tree reorder operation
-        // Format: id, numChildren, then numChildren ids
+        // Parse Suspense tree reorder operation
+        // Format: parentID, numChildren, then numChildren ids
+        const parentID = operations[i + 1];
         const numChildren = operations[i + 2];
-        i += 3 + numChildren;
+        i += 3;
+
+        const children: number[] = [];
+        for (let j = 0; j < numChildren; j++) {
+          children.push(operations[i]);
+          i++;
+        }
+
+        result.operations.push({
+          type: 'suspenseReorderChildren',
+          parentID,
+          children,
+        });
         break;
       }
 
       case SUSPENSE_TREE_OPERATION_RESIZE: {
-        // Skip Suspense tree resize operation
+        // Skip Suspense tree resize operation (visual bounds not needed for our tools)
         // Format: id, numRects, then numRects * 4 values
         const numRects = operations[i + 2];
         i += 3;
@@ -356,20 +429,52 @@ export function parseOperations(operations: number[]): ParsedOperations {
       }
 
       case SUSPENSE_TREE_OPERATION_SUSPENDERS: {
-        // Skip Suspense tree suspenders operation
+        // Parse Suspense tree suspenders operation
         // Format: changeLength, then for each change:
         //   id, hasUniqueSuspenders, endTime, isSuspended, environmentNamesLength, environmentNames...
         i++;
         const changeLength = operations[i++];
 
+        const changes: {
+          id: number;
+          hasUniqueSuspenders: boolean;
+          endTime: number;
+          isSuspended: boolean;
+          environments: string[];
+        }[] = [];
+
         for (let changeIndex = 0; changeIndex < changeLength; changeIndex++) {
-          i++; // id
-          i++; // hasUniqueSuspenders
-          i++; // endTime
-          i++; // isSuspended
+          const changeId = operations[i++];
+          const hasUniqueSuspenders = operations[i++] === 1;
+          // Backend multiplies by 1000; divide back to match React DevTools store.js
+          const endTime = operations[i++] / 1000;
+          const isSuspended = operations[i++] === 1;
           const environmentNamesLength = operations[i++];
-          i += environmentNamesLength; // skip environment name string IDs
+
+          const environments: string[] = [];
+          for (let envIndex = 0; envIndex < environmentNamesLength; envIndex++) {
+            const envStringID = operations[i++];
+            const envName = result.stringTable[envStringID];
+            // Use loose equality (!=) to filter both null and undefined,
+            // matching React DevTools store.js behavior
+            if (envName != null && envName !== '') {
+              environments.push(envName);
+            }
+          }
+
+          changes.push({
+            id: changeId,
+            hasUniqueSuspenders,
+            endTime,
+            isSuspended,
+            environments,
+          });
         }
+
+        result.operations.push({
+          type: 'suspenseSuspenders',
+          changes,
+        });
         break;
       }
 

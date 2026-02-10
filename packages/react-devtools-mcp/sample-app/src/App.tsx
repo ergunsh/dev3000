@@ -9,9 +9,46 @@ import {
   memo,
   forwardRef,
   Fragment,
+  Suspense,
+  lazy,
   type ReactNode,
 } from 'react';
 import {ExternalComponent, AnotherExternalComponent} from './components/ExternalComponent';
+
+// Lazy-loaded component for testing Suspense
+const LazyComponent = lazy(() =>
+  new Promise<{default: React.ComponentType}>((resolve) => {
+    // Simulate network delay
+    setTimeout(() => {
+      resolve({
+        default: function LazyLoadedContent() {
+          return (
+            <div data-testid="lazy-content" style={{padding: '1rem', background: '#e0f7fa'}}>
+              This content was loaded lazily after a delay.
+            </div>
+          );
+        },
+      });
+    }, 1500);
+  })
+);
+
+// Another lazy component with longer delay
+const SlowLazyComponent = lazy(() =>
+  new Promise<{default: React.ComponentType}>((resolve) => {
+    setTimeout(() => {
+      resolve({
+        default: function SlowLoadedContent() {
+          return (
+            <div data-testid="slow-lazy-content" style={{padding: '1rem', background: '#fff3e0'}}>
+              This content took longer to load.
+            </div>
+          );
+        },
+      });
+    }, 3000);
+  })
+);
 
 // ============================================
 // Context for testing context inspection
@@ -517,6 +554,41 @@ function App() {
           <ExternalComponent />
           <AnotherExternalComponent label="External label" />
         </StyledSection>
+
+        <section style={{marginBottom: '2rem'}}>
+          <h2>Suspense Boundaries</h2>
+          <p>These components use React Suspense for lazy loading.</p>
+
+          <Suspense
+            fallback={
+              <div style={{padding: '1rem', background: '#f5f5f5'}}>
+                Loading lazy component...
+              </div>
+            }
+          >
+            <LazyComponent />
+          </Suspense>
+
+          <div style={{marginTop: '1rem'}}>
+            <Suspense
+              fallback={
+                <div style={{padding: '1rem', background: '#f5f5f5'}}>
+                  Loading slow component...
+                </div>
+              }
+            >
+              <Suspense
+                fallback={
+                  <div style={{padding: '0.5rem', background: '#eeeeee'}}>
+                    Nested suspense loading...
+                  </div>
+                }
+              >
+                <SlowLazyComponent />
+              </Suspense>
+            </Suspense>
+          </div>
+        </section>
       </div>
     </ThemeContext.Provider>
   );

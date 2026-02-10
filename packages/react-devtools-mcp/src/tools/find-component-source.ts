@@ -83,8 +83,18 @@ export function createFindComponentSourceTool(
   };
 
   return {
-    description:
-      'Find the source file location for a React component that renders a specific DOM element. Takes a CSS selector and returns the component name, source file path, and line number.',
+    description: `Find the source file location for a React component that renders a specific DOM element. Takes a CSS selector and returns the component name, source file path, line number, and owner chain. Falls back to grep search patterns when source maps are unavailable (production builds).
+
+Example output:
+  ## Component Source
+
+  **Selector:** \`.submit-button\`
+  **Component:** SubmitButton
+  **Element ID:** 78
+  **Source:** \`SubmitButton.tsx:23:5\`
+
+  ### Owner chain:
+  \`App -> Form -> SubmitButton\``,
     inputs: {
       type: 'object',
       properties: {
