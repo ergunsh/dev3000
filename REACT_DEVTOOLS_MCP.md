@@ -1,18 +1,22 @@
 # React DevTools MCP Integration
 
-This document describes the React DevTools integration for d3k, enabling AI agents to inspect React component trees, state, props, and hooks via MCP tools.
+This document describes the React DevTools integration for d3k, enabling AI agents to inspect React component trees, state, props, hooks, performance, and Suspense boundaries via MCP tools.
 
 ## Overview
 
-When d3k detects a React project, it automatically injects React DevTools scripts into the browser. This exposes four MCP tools that AI agents (like Claude) can use to understand and debug React applications.
+When d3k detects a React project, it automatically injects React DevTools scripts into the browser. This exposes nine MCP tools that AI agents (like Claude) can use to understand and debug React applications.
 
 **Key Features:**
 - No browser extension required - scripts are injected automatically
 - Read-only access to React component internals
 - Output formatted for LLM consumption
 - Hook variable names parsed from source maps
+- Performance profiling with per-component render times
+- Suspense boundary inspection with suspension causes and resolution timelines
 
 ## MCP Tools
+
+### Component Inspection
 
 | Tool | Description |
 |------|-------------|
@@ -20,6 +24,21 @@ When d3k detects a React project, it automatically injects React DevTools script
 | `react_devtools_inspect_element` | Get props, state, hooks, context for a specific component by ID |
 | `react_devtools_search_components` | Find components by name pattern |
 | `react_devtools_find_component_source` | Map a CSS selector to the React component source file |
+
+### Performance Profiling
+
+| Tool | Description |
+|------|-------------|
+| `react_devtools_profiler_start` | Start profiling to record component render times |
+| `react_devtools_profiler_stop` | Stop profiling and return per-component render timing results |
+
+### Suspense Debugging
+
+| Tool | Description |
+|------|-------------|
+| `react_devtools_get_suspense_tree` | Get Suspense boundary tree with suspension status |
+| `react_devtools_inspect_suspense` | Get detailed info about a Suspense boundary (causes, timing, owner chain) |
+| `react_devtools_get_suspense_timeline` | Get timeline of Suspense boundary resolutions with source locations |
 
 ## How It Works
 
@@ -31,13 +50,29 @@ When d3k detects a React project, it automatically injects React DevTools script
 
 ## Example Usage
 
-An AI agent can inspect a component like this:
+### Inspecting Components
 
 ```
 1. Call react_devtools_get_component_tree to see the hierarchy
 2. Find the component ID of interest (e.g., id: 5 for "Header")
 3. Call react_devtools_inspect_element with id: 5 to see its props, state, hooks
 4. Or use react_devtools_find_component_source with selector: "nav" to find the source file
+```
+
+### Profiling Performance
+
+```
+1. Call react_devtools_profiler_start to begin recording
+2. Interact with the application (trigger re-renders)
+3. Call react_devtools_profiler_stop to get per-component render times
+```
+
+### Debugging Suspense
+
+```
+1. Call react_devtools_get_suspense_tree to see all Suspense boundaries and their status
+2. Call react_devtools_inspect_suspense with id: 8 to see what's blocking a boundary
+3. Call react_devtools_get_suspense_timeline to see resolution history with timing
 ```
 
 ## Implementation
@@ -47,6 +82,8 @@ The implementation lives in `packages/react-devtools-mcp/` as a self-contained p
 - Uses `react-devtools-core` for DevTools hook infrastructure
 - Directly accesses `RendererInterface` (no Agent/Bridge setup needed)
 - Parses hook variable names from source maps
+- Tracks Suspense boundaries and their suspension causes from operations events
+- Resolves compiled source locations via source maps (including Next.js/Turbopack chunks)
 - Formats output as readable text for AI consumption
 
 ## Try It Out
